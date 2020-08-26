@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="icon.png" type="image/x-icon">
+    <title>NO KEY'S GAME</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        @font-face {
+            font-family: Myfont;
+            src: url(9303.ttf);
+
+        }
+
+        @keyframes titleAnimation {
+            0% {
+                font-size: 20px;
+                
+            }
+
+            25% {
+                transform: rotate(-5deg);
+            }
+
+            50% {
+                font-size: 35px;
+                transform: rotate(5deg);
+            }
+
+            75% {
+                transform: rotate(-5deg);
+            }
+
+            100% {
+                font-size: 20px;
+                
+            }
+        }
+
+        @keyframes updown {
+            0% {
+                margin-top: -150px;
+            }
+
+            50% {
+                margin-top: -140px;
+            }
+
+            100% {
+                margin-top: -150px;
+            }
+        }
+
+        html, body {
+            background-color:#101010;;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .mainTitle, .endTitle {
+            color: white;
+            font-family: Myfont;
+            font-size: 20px;
+            animation: titleAnimation 5s infinite ease-in-out;
+            margin-top: 50px;
+            text-align: center;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 2s ease-in-out;
+            flex-direction: column;
+            cursor: pointer;
+        }
+
+        .endTitle {
+            animation: updown 1s ease-in-out infinite;
+        }
+
+        .screen {
+            width: 100%;
+            height: 100%;
+            transition: 1s;
+            
+        }
+
+        #dialog {
+            position: absolute;
+            position: fixed;
+            color: lime;
+            font-family: Myfont;
+            font-size: 18px;
+            text-align: center;
+            margin-top: -150px;
+            margin-left: 28px;
+            width: 100%;
+            animation: updown 1s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="screen">
+        <div class="mainTitle">NO KEY'S GAME <i style='font-size: 12px;'>кликни чтобы начать</i></div>
+
+        <canvas id="c"></canvas>
+
+        <p id='dialog'>...</p>
+
+        <div class='endTitle'> <b style='color: #6136ff'> created by npb</b> <br> игра сделана за 72 часа <br><br> музыка: <br> Eric Skiff - Underclocked (underunderclocked mix) <br> Kevin MacLeod - 8bit Dungeon Boss <br> <br> special for game jam 2020</div>
+
+        <img src="sprites/platform.png" id='platformSprite' style='display: none'>
+        <img src="sprites/mouse.png" id='mouseSprite' style='display: none'>
+        <img src="sprites/bot.png" id='botSprite' style='display: none'>
+        <img src="sprites/botface.png" id='botFace' style='display: none'>
+        <img src="sprites/bomb.png" id='bomb' style='display: none'>
+        <img src="sprites/laser.png" id='laser' style='display: none'>
+    </div>
+
+    <script src='js/script.js'></script>
+
+    <script>
+        let ISGAMESTARTED = false;
+
+        let cnv = document.getElementById('c');
+        cnv.width = window.innerWidth;
+        cnv.height = window.innerHeight;
+        let ctx = cnv.getContext('2d');
+
+        let CAM = {
+            X: 0,
+            Y: 0,
+        }
+
+        let rand = (min, max) => Math.floor(min + Math.random() * (max + 1 - min));
+
+        let star = [];
+        function createStars(){
+            for(let i = 0; i < 100; i++){
+                star.push({x: rand(0, cnv.width), y: rand(0, cnv.height), speed: rand(100, 500)});
+            }
+        }
+        createStars();
+
+        function stars(){
+            ctx.clearRect(0,0,cnv.width,cnv.height)
+            for(let i = 0; i < star.length; i++){
+                ctx.fillStyle = 'white';
+                ctx.fillRect(star[i].x+CAM.X, star[i].y+CAM.Y, star[i].speed/100, star[i].speed/100);
+                star[i].y -= star[i].speed/100;
+                if(star[i].y < 0){
+                    star[i].y = cnv.height;
+                }
+            }
+        }
+
+        let backSound = new Audio('sounds/menubackground.mp3')
+        let startSound = new Audio('sounds/start.wav')
+        let bossSound = new Audio('sounds/boss.mp3');
+
+        bossSound.loop = true;
+        bossSound.volume = 0.3;
+
+        startSound.volume = 0.2;
+        backSound.loop = true;
+        backSound.volume = 0.2;
+
+        document.onclick = function(){
+            if(!ISGAMESTARTED){
+                document.getElementsByClassName('mainTitle')[0].style.marginTop = "-" + cnv.height + "px";
+                ISGAMESTARTED = true;
+                startSound.play();
+                backSound.play();
+            } 
+        }
+
+        let platformSprite = document.getElementById('platformSprite');
+        function drawPlatform(){
+            ctx.drawImage(platformSprite, Math.floor(cnv.width/2-(264/2))+CAM.X, cnv.height/2+CAM.Y);
+        }
+
+        let playerSprite = document.getElementById('mouseSprite');
+        let player = {
+            x: 2,
+            y: 1,
+            pos: 2,
+        }
+        function Player(){
+            ctx.drawImage(playerSprite, player.pos*64, 0, 64, 64, Math.floor(cnv.width/2-(264/2))+4+player.x*64+CAM.X, cnv.height/2+4+player.y*64+CAM.Y, 64, 64);
+        }
+
+        cnv.oncontextmenu = function(){
+            player.pos+=1;
+            if(player.pos > 3){
+                player.pos = 0;
+            }
+            moveSound.currentTime = 0.0;
+            moveSound.play();
+
+            ISPLAYERROTATE = true;
+
+            
+
+            return false;
+        }
+
+        cnv.onclick = function(){
+            player.pos-=1;
+            if(player.pos < 0){
+                player.pos = 3;
+            }
+            moveSound.currentTime = 0.0;
+            moveSound.play();
+
+            if(FRASENUMBER < 5){
+                FRASENUMBER++;
+                showFrase(FRASENUMBER);
+                bot.face = rand(0, 1);
+            }
+
+            if(FRASENUMBER >= 5){
+                bot.face = 3;
+                backSound.pause();
+                bossSound.play();
+                TIMESTARTED = true;
+            }
+
+            ISPLAYERROTATE = true;
+        }
+
+        let moveSound = new Audio('sounds/move.mp3');
+        let stopSound = new Audio('sounds/stop.wav');
+        stopSound.volume = 0.25;
+    
+        cnv.onwheel = function(e){
+            if(e.deltaY < 0 && player.pos == 0 && player.y < 3){
+                player.y++;
+                moveSound.currentTime = 0.0;
+                moveSound.play();
+            }
+
+            if(e.deltaY < 0 && player.pos == 0 && player.y+1 > 3){
+                shake = 8;
+                stopSound.currentTime = 0.0;
+                stopSound.play();
+            }
+
+            if(e.deltaY < 0 && player.pos == 1 && player.x > 0){
+                player.x--;
+                moveSound.currentTime = 0.0;
+                moveSound.play();
+            }
+
+            if(e.deltaY < 0 && player.pos == 1 && player.x-1 < 0){
+                shake = 8;
+                stopSound.currentTime = 0.0;
+                stopSound.play();
+            }
+
+            if(e.deltaY < 0 && player.pos == 2 && player.y > 0){
+                player.y--;
+                moveSound.currentTime = 0.0;
+                moveSound.play();
+            }
+
+            if(e.deltaY < 0 && player.pos == 2 && player.y-1 < 0){
+                shake = 8;
+                stopSound.currentTime = 0.0;
+                stopSound.play();
+            }
+
+            if(e.deltaY < 0 && player.pos == 3 && player.x < 4){
+                player.x++;
+                moveSound.currentTime = 0.0;
+                moveSound.play();
+            }
+
+            if(e.deltaY < 0 && player.pos == 3 && player.x+1 > 4){
+                shake = 8;
+                stopSound.currentTime = 0.0;
+                stopSound.play();
+            }
+            
+        }
+
+        let bot = {
+            x: Math.floor(cnv.width/2-68),
+            y: cnv.height,
+            onPosition: false,
+            face: 0,
+        }
+
+        let fraseWindow = document.getElementById('dialog');
+
+        let botSprite = document.getElementById('botSprite');
+        let botFace = document.getElementById('botFace');
+        function Bot(){
+
+            ctx.drawImage(botSprite, 0, 0, 136, 156, bot.x+28+CAM.X, bot.y+CAM.Y, 136, 156);
+            ctx.drawImage(botFace, bot.face*40, 0, 40, 40, bot.x+78+CAM.X, bot.y+CAM.Y+70, 40, 40);
+            if(ISPLAYERROTATE){
+                if(bot.y > Math.floor(cnv.height/5)){
+                    bot.y-=10;
+                    bot.onPosition = true;
+                }
+            }
+        }
+
+
+        function mainLoop(){
+            if(ISGAMESTARTED){
+            stars();
+            drawPlatform()
+            Player();
+            Bot();
+            drawLasers();
+            drawBombs();
+            endGame();
+            } else {
+                bomb = [];
+            }
+        }
+
+        
+
+        setInterval(mainLoop, 1000/60);
+
+    </script>
+    <script src='js/shake.js'></script>
+    
+</body>
+</html>
