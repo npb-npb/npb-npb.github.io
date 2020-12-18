@@ -40,6 +40,20 @@ function addCells(){
         }
     }
     //debug
+
+    //LOSE::
+    if(freeCells.length == 0){
+        alert('YOU LOSE!');
+        grid = [[],[],[],[]];
+        
+        createGrid();
+        addCells();
+        addCells();
+        drawCells();
+    }
+
+
+
     //console.log(freeCells);
     let r = rand(0, freeCells.length-1);
     for(let i = 0; i < grid.length; i++){
@@ -50,7 +64,7 @@ function addCells(){
         }
     }
 }
-addCells();
+addCells(); addCells();
 
 //drawing cell's::
 function drawCells(){
@@ -113,6 +127,11 @@ drawCells();
 //move cells with arrows key's::
 
 function moveCells(side){
+    for(let i = 0; i < grid.length; i++){
+        for(let j = 0; j < grid[i].length; j++){
+            //!!!
+        }
+    }
     addCells();
     drawCells();
 }
